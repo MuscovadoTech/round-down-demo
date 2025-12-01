@@ -1,0 +1,771 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iPad & Screen 同步流程</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .control-title {
+            font-size: 1.3em;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .demo-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        /* iPad Device Frame */
+        .ipad-device {
+            perspective: 1000px;
+        }
+        
+        .ipad-frame {
+            background: linear-gradient(145deg, #e6e6e6, #ffffff);
+            border-radius: 30px;
+            padding: 45px 30px;
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.3),
+                inset 0 0 0 2px rgba(255,255,255,0.5);
+            position: relative;
+        }
+        
+        .ipad-frame::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 6px;
+            background: #333;
+            border-radius: 10px;
+            opacity: 0.3;
+        }
+        
+        .ipad-frame::after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            border: 3px solid #333;
+            border-radius: 50%;
+            opacity: 0.2;
+        }
+        
+        .ipad-screen {
+            background: linear-gradient(135deg, #56CCF2, #2F80ED);
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 500px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .device-frame {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .device-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .device-icon {
+            font-size: 2em;
+        }
+        
+        .device-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .screen-display {
+            background: linear-gradient(135deg, #F093FB, #F5576C);
+            border-radius: 10px;
+            padding: 30px;
+            min-height: 500px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .video-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .play-button {
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #667eea;
+        }
+        
+        .play-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .script-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .script-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .script-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        
+        .countdown-display {
+            font-size: 8em;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            animation: countdownPulse 1s infinite;
+        }
+        
+        @keyframes countdownPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .recording-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+        
+        .rec-dot {
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .timer-display {
+            font-size: 1.2em;
+        }
+        
+        .message-box {
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .action-button {
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        .action-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .qrcode-display {
+            width: 200px;
+            height: 200px;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5em;
+            color: #333;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        
+        .status-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        
+        .thumbnail {
+            width: 200px;
+            height: 150px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            width: 80%;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .completion-message {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            animation: fadeInScale 0.5s ease;
+        }
+        
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .demo-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱🖥️ iPad & Screen 互動式同步演示</h1>
+        
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="control-title">🎮 操作控制台</div>
+            <div class="control-buttons">
+                <button class="control-btn" onclick="goToStep(0)">0️⃣ 待機</button>
+                <button class="control-btn" onclick="goToStep(1)">1️⃣ 開始</button>
+                <button class="control-btn" onclick="goToStep(2)">2️⃣ 選腳本</button>
+                <button class="control-btn" onclick="goToStep(3)">3️⃣ 歡迎影片</button>
+                <button class="control-btn" onclick="goToStep(4)">4️⃣ 片段1說明</button>
+                <button class="control-btn" onclick="goToStep(5)">5️⃣ 拍攝段1</button>
+                <button class="control-btn" onclick="goToStep(6)">6️⃣ 片段2說明</button>
+                <button class="control-btn" onclick="goToStep(7)">7️⃣ 拍攝段2</button>
+                <button class="control-btn" onclick="goToStep(8)">8️⃣ Ending</button>
+                <button class="control-btn" onclick="goToStep(8.5)">⏳ 製作中</button>
+                <button class="control-btn" onclick="goToStep(9)">9️⃣ 完成</button>
+            </div>
+        </div>
+
+        <!-- Device Displays -->
+        <div class="demo-container">
+            <!-- iPad with Device Frame -->
+            <div class="ipad-device">
+                <div class="ipad-frame">
+                    <div class="ipad-screen" id="ipadDisplay">
+                        <!-- Content will be dynamically updated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen -->
+            <div class="device-frame">
+                <div class="device-header">
+                    <div class="device-icon">🖥️</div>
+                    <div class="device-name">Screen 主畫面</div>
+                </div>
+                <div class="screen-display" id="screenDisplay">
+                    <!-- Content will be dynamically updated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        let countdown = 5;
+        let recordTime = 0;
+        let countdownInterval = null;
+        let recordInterval = null;
+        let completionTimeout = null;
+        let showButton = false;
+
+        const steps = {
+            0: { // 待機
+                ipad: () => `
+                    <div class="play-button" onclick="goToStep(1)">▶️</div>
+                    <div class="status-text">點擊開始</div>
+                `,
+                screen: () => `
+                    <div class="video-placeholder">🎬</div>
+                    <div class="status-text">品牌推廣影片循環播放中...</div>
+                `
+            },
+            1: { // 開始
+                ipad: () => `
+                    <div class="status-text">系統啟動中...</div>
+                    <div class="message-box">準備選擇腳本</div>
+                `,
+                screen: () => `
+                    <div class="status-text">歡迎使用互動錄影系統</div>
+                    <div class="message-box">請選擇您的腳本...</div>
+                `
+            },
+            2: { // 選腳本
+                ipad: () => `
+                    <div class="status-text">請選擇腳本</div>
+                    <div class="script-buttons">
+                        <div class="script-btn" onclick="selectScript('A')">A</div>
+                        <div class="script-btn" onclick="selectScript('B')">B</div>
+                        <div class="script-btn" onclick="selectScript('C')">C</div>
+                    </div>
+                `,
+                screen: () => `
+                    <div class="status-text">選擇您的故事腳本</div>
+                    <div class="script-buttons">
+                        <div class="script-btn">A<br><small style="font-size:0.4em;">冒險</small></div>
+                        <div class="script-btn">B<br><small style="font-size:0.4em;">溫馨</small></div>
+                        <div class="script-btn">C<br><small style="font-size:0.4em;">搞笑</small></div>
+                    </div>
+                    <div class="message-box" style="margin-top: 30px;">請在 iPad 上選擇</div>
+                `
+            },
+            3: { // 歡迎影片
+                ipad: () => `
+                    <div class="thumbnail">🎥</div>
+                    <div class="status-text">歡迎影片</div>
+                `,
+                screen: () => `
+                    <video autoplay loop muted playsinline style="width: 90%; max-width: 800px; border-radius: 15px;">
+                        <source src="/video/welcome.mp4" type="video/mp4">
+                    </video>
+                    <div class="status-text" style="margin-top: 15px;">歡迎影片播放中</div>
+                `
+            },
+            4: { // 片段1說明
+                ipad: () => `
+                    <div class="status-text">B腳本 - 片段1</div>
+                    ${showButton ? '<button class="action-button" onclick="goToStep(5)">🎬 開始拍攝第一段</button>' : '<div style="margin-top: 15px; opacity: 0.7;">請稍候...</div>'}
+                `,
+                 screen: () => `
+                    <video autoplay muted playsinline style="width: 90%; max-width: 800px; border-radius: 15px;">
+                        <source src="/video/segment.mp4" type="video/mp4">
+                    </video>
+                    <div class="status-text" style="margin-top: 15px;">腳本說明影片：「請對著鏡頭說：你好，我是...」</div>
+                `
+            },
+            5: { // 拍攝段1
+                ipad: () => {
+                    if (recordTime === -1) {
+                        return `
+                            <div class="completion-message">
+                                ✅<br>第一段完成！
+                            </div>
+                        `;
+                    } else if (recordTime > 0) {
+                        return `
+                            <div class="status-text">錄製中</div>
+                            <div class="message-box">
+                                <div style="font-size: 2em; color: #ff4444;">●</div>
+                                <div style="margin-top: 10px;">REC 00:${String(recordTime).padStart(2, '0')}</div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="status-text">準備拍攝第一段</div>
+                            <div class="message-box">
+                                倒數後自動開始錄製<br>
+                                請注視前方相機
+                            </div>
+                        `;
+                    }
+                },
+                screen: () => {
+                    if (recordTime === -1) {
+                        return `
+                            <div class="completion-message">
+                                ✅ 第一段完成！
+                            </div>
+                        `;
+                    } else if (countdown > 0 && countdown <= 5) {
+                        return `<div class="countdown-display">${countdown}</div>`;
+                    } else if (recordTime > 0) {
+                        return `
+                            <div class="video-placeholder">
+                                <video autoplay loop muted playsinline style="width: 100%; border-radius: 10px;">
+                                    <source src="/video/user1.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="recording-overlay">
+                                <div class="rec-dot"></div>
+                                <span>REC</span>
+                                <span class="timer-display">00:${String(recordTime).padStart(2, '0')}</span>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="status-text">準備開始錄製...</div>
+                            <div class="message-box">即將開始倒數</div>
+                        `;
+                    }
+                }
+            },
+            6: { // 片段2說明
+                ipad: () => `
+                    <div class="status-text">B腳本 - 片段2</div>
+                    ${showButton ? '<button class="action-button" onclick="goToStep(7)">🎬 開始拍攝第二段</button>' : '<div style="margin-top: 15px; opacity: 0.7;">請稍候...</div>'}
+                `,
+                screen: () => `
+                    <video autoplay muted playsinline style="width: 90%; max-width: 800px; border-radius: 15px;">
+                        <source src="/video/segment.mp4" type="video/mp4">
+                    </video>
+                    <div class="status-text" style="margin-top: 15px;">第二段腳本說明：「現在請說出你的願望...」</div>
+                `
+            },
+            7: { // 拍攝段2
+                ipad: () => {
+                    if (recordTime === -1) {
+                        return `
+                            <div class="completion-message">
+                                ✅<br>所有段落拍攝完成！
+                            </div>
+                        `;
+                    } else if (recordTime > 0) {
+                        return `
+                            <div class="status-text">錄製中</div>
+                            <div class="message-box">
+                                <div style="font-size: 2em; color: #ff4444;">●</div>
+                                <div style="margin-top: 10px;">REC 00:${String(recordTime).padStart(2, '0')}</div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="status-text">準備拍攝第二段</div>
+                            <div class="message-box">
+                                倒數後自動開始錄製<br>
+                                請注視前方相機
+                            </div>
+                        `;
+                    }
+                },
+                screen: () => {
+                    if (recordTime === -1) {
+                        return `
+                            <div class="completion-message">
+                                ✅ 所有段落拍攝完成！
+                            </div>
+                        `;
+                    } else if (countdown > 0 && countdown <= 5) {
+                        return `<div class="countdown-display">${countdown}</div>`;
+                    } else if (recordTime > 0) {
+                        return `
+                            <div class="video-placeholder">
+                                <video autoplay loop muted playsinline style="width: 100%; border-radius: 10px;">
+                                    <source src="/video/user1.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="recording-overlay">
+                                <div class="rec-dot"></div>
+                                <span>REC</span>
+                                <span class="timer-display">00:${String(recordTime).padStart(2, '0')}</span>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="status-text">準備開始錄製...</div>
+                            <div class="message-box">即將開始倒數</div>
+                        `;
+                    }
+                }
+            },
+            8: { // Ending
+                ipad: () => `
+                    <div class="thumbnail">🎉</div>
+                    <div class="status-text">Ending 影片</div>
+                    <div class="message-box">
+                        播放結尾影片
+                    </div>
+                `,
+                screen: () => `
+                    <video autoplay loop muted playsinline style="width: 90%; max-width: 800px; border-radius: 15px;">
+                        <source src="/video/end.mp4" type="video/mp4">
+                    </video>
+                    <div class="status-text" style="margin-top: 15px;">Ending 影片播放中</div>
+                `
+            },
+            8.5: { // 影片製作中
+                ipad: () => `
+                    <div class="status-text">⏳ 影片製作中...</div>
+                    <div class="message-box">
+                        正在合成您的專屬影片<br>
+                        請稍候片刻
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%;"></div>
+                    </div>
+                `,
+                screen: () => `
+                    <div class="status-text">⏳ 影片製作中...</div>
+                    <div class="message-box" style="font-size: 1.2em;">
+                        正在合成您的專屬影片<br>
+                        <div style="margin-top: 20px; opacity: 0.8;">後台處理中...</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%; animation: progressAnimate 2s ease-in-out infinite;"></div>
+                    </div>
+                    <style>
+                        @keyframes progressAnimate {
+                            0%, 100% { width: 75%; }
+                            50% { width: 85%; }
+                        }
+                    </style>
+                `
+            },
+            9: { // 完成
+                ipad: () => `
+                    <div class="qrcode-display">📱</div>
+                    <div class="status-text">掃描 QR Code</div>
+                    <div class="message-box">下載您的專屬影片</div>
+                `,
+                screen: () => `
+                    <div class="qrcode-display">📱</div>
+                    <div class="status-text">影片製作完成！</div>
+                    <div class="message-box">
+                        請使用手機掃描 QR Code<br>
+                        立即下載您的影片
+                    </div>
+                `
+            }
+        };
+
+        function goToStep(step) {
+            clearInterval(countdownInterval);
+            clearInterval(recordInterval);
+            clearTimeout(completionTimeout);
+            countdown = 5;
+            recordTime = 0;
+            showButton = false;
+            currentStep = step;
+            updateDisplay();
+            
+            // Auto-advance for certain steps
+            if (step === 1) {
+                setTimeout(() => goToStep(2), 2000);
+            } else if (step === 4 || step === 6) {
+                // 步驟4和6：5秒後顯示按鈕
+                setTimeout(() => {
+                    showButton = true;
+                    updateDisplay();
+                }, 5000);
+            } else if (step === 5 || step === 7) {
+                // 自動開始倒數
+                setTimeout(() => startCountdown(step), 500);
+            } else if (step === 8) {
+                // Ending播放完成後進入製作中
+                setTimeout(() => goToStep(8.5), 3000);
+            } else if (step === 8.5) {
+                // 製作完成後進入步驟9
+                setTimeout(() => goToStep(9), 4000);
+            }
+        }
+
+        function selectScript(script) {
+            alert(`已選擇腳本 ${script}`);
+            setTimeout(() => goToStep(3), 500);
+            setTimeout(() => goToStep(4), 3000);
+        }
+
+        function startCountdown(step) {
+            countdown = 5;
+            countdownInterval = setInterval(() => {
+                countdown--;
+                updateDisplay();
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    startRecording(step);
+                }
+            }, 1000);
+        }
+
+        function startRecording(step) {
+            recordTime = 1;
+            recordInterval = setInterval(() => {
+                recordTime++;
+                updateDisplay();
+                if (recordTime >= 5) {
+                    clearInterval(recordInterval);
+                    showCompletion(step);
+                }
+            }, 1000);
+        }
+
+        function showCompletion(step) {
+            recordTime = -1; // 特殊標記顯示完成訊息
+            updateDisplay();
+
+            // 顯示按鈕選項
+            const ipadDisplay = document.getElementById('ipadDisplay');
+            ipadDisplay.innerHTML += `
+                <div class="message-box">
+                    <button class="action-button" onclick="proceedToNextStep(${step === 5 ? 6 : 8})">繼續</button>
+                    <button class="action-button" onclick="goToStep(2)">重來</button>
+                </div>
+            `;
+        }
+
+        function proceedToNextStep(nextStep) {
+            goToStep(nextStep);
+        }
+
+        function updateDisplay() {
+            const step = steps[currentStep];
+            if (step) {
+                document.getElementById('ipadDisplay').innerHTML = step.ipad();
+                document.getElementById('screenDisplay').innerHTML = step.screen();
+            }
+        }
+
+        // Initialize
+        goToStep(0);
+    </script>
+</body>
+</html>
