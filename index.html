@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -442,8 +442,7 @@
             },
             1: { // 開始
                 ipad: () => `
-                    <div class="status-text">系統啟動中...</div>
-                    <div class="message-box">準備選擇腳本</div>
+                    <div class="status-text">活動開始...</div>
                 `,
                 screen: () => `
                     <div class="status-text">歡迎使用互動錄影系統</div>
@@ -475,7 +474,7 @@
                     <div class="status-text">歡迎影片</div>
                 `,
                 screen: () => `
-                    <video autoplay loop muted playsinline style="width: 90%; max-width: 800px; border-radius: 15px;">
+                    <video autoplay muted playsinline style="width: 90%; max-width: 800px; border-radius: 15px;">
                         <source src="/video/welcome.mp4" type="video/mp4">
                     </video>
                     <div class="status-text" style="margin-top: 15px;">歡迎影片播放中</div>
@@ -506,7 +505,7 @@
                             <div class="status-text">錄製中</div>
                             <div class="message-box">
                                 <div style="font-size: 2em; color: #ff4444;">●</div>
-                                <div style="margin-top: 10px;">REC 00:${String(recordTime).padStart(2, '0')}</div>
+                                <div style="margin-top: 10px;">REC...</div>
                             </div>
                         `;
                     } else {
@@ -531,7 +530,7 @@
                     } else if (recordTime > 0) {
                         return `
                             <div class="video-placeholder">
-                                <video autoplay loop muted playsinline style="width: 100%; border-radius: 10px;">
+                                <video autoplay muted playsinline style="width: 100%; border-radius: 10px;">
                                     <source src="/video/user1.mp4" type="video/mp4">
                                 </video>
                             </div>
@@ -574,7 +573,7 @@
                             <div class="status-text">錄製中</div>
                             <div class="message-box">
                                 <div style="font-size: 2em; color: #ff4444;">●</div>
-                                <div style="margin-top: 10px;">REC 00:${String(recordTime).padStart(2, '0')}</div>
+                                <div style="margin-top: 10px;">REC...</div>
                             </div>
                         `;
                     } else {
@@ -599,8 +598,8 @@
                     } else if (recordTime > 0) {
                         return `
                             <div class="video-placeholder">
-                                <video autoplay loop muted playsinline style="width: 100%; border-radius: 10px;">
-                                    <source src="/video/user1.mp4" type="video/mp4">
+                                <video autoplay muted playsinline style="width: 100%; border-radius: 10px;">
+                                    <source src="/video/user2.mp4" type="video/mp4">
                                 </video>
                             </div>
                             <div class="recording-overlay">
@@ -626,7 +625,7 @@
                     </div>
                 `,
                 screen: () => `
-                    <video autoplay loop muted playsinline style="width: 90%; max-width: 800px; border-radius: 15px;">
+                    <video autoplay muted playsinline style="width: 90%; max-width: 800px; border-radius: 15px;">
                         <source src="/video/end.mp4" type="video/mp4">
                     </video>
                     <div class="status-text" style="margin-top: 15px;">Ending 影片播放中</div>
@@ -689,7 +688,7 @@
             
             // Auto-advance for certain steps
             if (step === 1) {
-                setTimeout(() => goToStep(2), 2000);
+                setTimeout(() => goToStep(2), 500);
             } else if (step === 4 || step === 6) {
                 // 步驟4和6：5秒後顯示按鈕
                 setTimeout(() => {
@@ -698,7 +697,7 @@
                 }, 5000);
             } else if (step === 5 || step === 7) {
                 // 自動開始倒數
-                setTimeout(() => startCountdown(step), 500);
+                setTimeout(() => startCountdown(step), 100);
             } else if (step === 8) {
                 // Ending播放完成後進入製作中
                 setTimeout(() => goToStep(8.5), 3000);
@@ -709,7 +708,6 @@
         }
 
         function selectScript(script) {
-            alert(`已選擇腳本 ${script}`);
             setTimeout(() => goToStep(3), 500);
             setTimeout(() => goToStep(4), 3000);
         }
@@ -741,6 +739,12 @@
         function showCompletion(step) {
             recordTime = -1; // 特殊標記顯示完成訊息
             updateDisplay();
+
+            // 步驟7不顯示按鈕，3秒後自動進入下一步
+            if (step === 7) {
+                setTimeout(() => proceedToNextStep(8), 3000);
+                return;
+            }
 
             // 顯示按鈕選項
             const ipadDisplay = document.getElementById('ipadDisplay');
